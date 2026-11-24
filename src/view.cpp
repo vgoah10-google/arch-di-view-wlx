@@ -11,9 +11,19 @@ namespace archdiview {
 // registered against the DLL's own module (not the host EXE's).
 HINSTANCE g_hInst = nullptr;
 
+// Plugin identity, shown in the right-click About box.
+const wchar_t kPluginName[] = L"ArchDiView";
+const wchar_t kPluginVersion[] = L"3.1";
+const wchar_t kPluginAuthor[] = L"ArchDiView contributors";
+const wchar_t kPluginDesc[] =
+    L"Archive info Lister: compression-ratio bar, details and a contents tree.";
+
 namespace {
 
 const wchar_t kWndClass[] = L"ArchDiViewWnd";
+
+// Right-click context-menu command id (About).
+const int kMenuAbout = 1;
 
 int Scale(int v, int dpi) { return MulDiv(v, dpi, 96); }
 
@@ -208,8 +218,61 @@ LRESULT View::HandleMessage(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         }
         case WM_DESTROY:
             return 0;
+        case WM_RBUTTONUP: {
+            // Right-click context menu (About for now).
+            HMENU menu = CreatePopupMenu();
+            if (!menu) return 0;
+            AppendMenuW(menu, MF_STRING, kMenuAbout, L"About ArchDiView...");
+            POINT pt;
+            GetCursorPos(&pt);
+            // TrackPopupMenu sends WM_COMMAND to hwnd when an item is chosen.
+            SetForegroundWindow(hwnd);
+            TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_RETURNCMD,
+                           pt.x, pt.y, 0, hwnd, nullptr);
+            DestroyMenu(menu);
+            return 0;
+        }
+        case WM_COMMAND: {
+            int id = (int)LOWORD(wp);
+            if (id == kMenuAbout) {
+                ShowAbout(hwnd);
+            }
+            return 0;
+        }
     }
     return DefWindowProcW(hwnd, msg, wp, lp);
+}
+
+// Build and show the About box with plugin identity, version and a short
+// capability summary.
+void View::ShowAbout(HWND hwnd) {
+    // Format/algorithm summary from the currently-loaded archive (if any).
+    std::wstring fmt = info_.format;
+    std::wstring line1 = std::wstring(kPluginName) + L" version " +
+                         kPluginVersion;
+    std::wstring msg;
+    msg += line1 + L"\n\n";
+    msg += std::wstring(kPluginDesc) + L"\n\n";
+    if (!fmt.empty()) {
+        msg += L"Currently viewing: " + fmt;
+        if (!info_.algorithm.empty()) msg += L" (" + info_.algorithm + L")";
+        wchar_t counts[96];
+        swprintf(counts, 96, L" — %u files, %u folders",
+                 (unsigned)info_.fileCount, (unsigned)info_.dirCount);
+        msg += counts;
+        msg += L"\n";
+    } else {
+        msg += L"No archive loaded.\n";
+    }
+    msg += L"\nSupports ZIP, TAR, GZip, TarGz, BZip2, Z, PPM, 7z, RAR, CAB, "
+           L"CPIO, ARJ, LHA/LZH, ARC/PAK, SQZ, ZOO, HA, BH, DWC, ACE.\n";
+    msg += L"7z and RAR use Total Commander's own archiver DLLs when "
+           L"available.\n\n";
+    msg += std::wstring(L"© ") + kPluginAuthor;
+
+    std::wstring title = std::wstring(L"About ") + kPluginName;
+    MessageBoxW(hwnd, msg.c_str(), title.c_str(),
+                MB_OK | MB_ICONINFORMATION);
 }
 
 void View::RecalcLayout(int clientWidth, int clientHeight) {

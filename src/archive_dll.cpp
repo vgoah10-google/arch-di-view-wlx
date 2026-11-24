@@ -17,9 +17,10 @@
 #include <vector>
 
 namespace archdiview {
-namespace {
 
 using namespace szdll;
+
+namespace {
 
 // ---- PROPVARIANT helpers ----------------------------------------------------
 bool VarToUInt64(const PROPVARIANT& p, uint64_t* out) {
@@ -161,23 +162,58 @@ private:
 };
 
 // ---- Locate + load the 7z DLL ----------------------------------------------
-// Search order mirrors ArchView: TC's own TC7Z64/TC7Z first, then 7z.dll.
+// A bare LoadLibraryW(L"TC7Z64.DLL") does NOT reliably find the DLL inside TC:
+// the loader's default search covers the app dir / system dirs / PATH, but TC's
+// own folder (where TC7Z64.DLL lives) is only searched if it happens to be on
+// PATH. So we build explicit candidate paths and try each in turn.
+HMODULE LoadArchiverDll(const wchar_t* dllName) {
+    // 1. The directory of the module containing this code (ArchDiView.wlx64) —
+    //    works even for portable TC / on-a-stick where %COMMANDER_PATH% is unset.
+    HMODULE selfMod = nullptr;
+    if (GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+                           (LPCWSTR)&LoadArchiverDll, &selfMod) && selfMod) {
+        wchar_t self[MAX_PATH] = {0};
+        if (GetModuleFileNameW(selfMod, self, MAX_PATH)) {
+            wchar_t* slash = wcsrchr(self, L'\\');
+            if (slash) { *(slash + 1) = L'\0';
+                std::wstring p = std::wstring(self) + dllName;
+                HMODULE m = LoadLibraryW(p.c_str());
+                if (m) return m;
+            }
+        }
+    }
+    // 2. %COMMANDER_PATH% (TC sets this to its install folder).
+    wchar_t cmdr[MAX_PATH] = {0};
+    if (GetEnvironmentVariableW(L"COMMANDER_PATH", cmdr, MAX_PATH) > 0) {
+        std::wstring p = std::wstring(cmdr) + L"\\" + dllName;
+        HMODULE m = LoadLibraryW(p.c_str());
+        if (m) return m;
+    }
+    // 3. The directory of the host EXE (totalcmd64.exe / totalcmd.exe).
+    wchar_t exe[MAX_PATH] = {0};
+    if (GetModuleFileNameW(nullptr, exe, MAX_PATH)) {
+        wchar_t* slash = wcsrchr(exe, L'\\');
+        if (slash) { *(slash + 1) = L'\0';
+            std::wstring p = std::wstring(exe) + dllName;
+            HMODULE m = LoadLibraryW(p.c_str());
+            if (m) return m;
+        }
+    }
+    // 4. Plain name (PATH / system dirs) as a last resort.
+    return LoadLibraryW(dllName);
+}
+
 HMODULE LoadSevenZipDll() {
-    // Prefer architecture-appropriate TC DLL next to the plugin / in TC dir.
+    // Prefer the architecture-appropriate TC DLL, then a standalone 7z.dll.
 #ifdef _WIN64
-    const wchar_t* tcName = L"TC7Z64.DLL";
-#else
-    const wchar_t* tcName = L"TC7Z.DLL";
-#endif
-    HMODULE m = LoadLibraryW(tcName);
+    HMODULE m = LoadArchiverDll(L"TC7Z64.DLL");
     if (m) return m;
-    // Fall back to a standalone 7z.dll (also architecture-specific by name).
-#ifdef _WIN64
-    m = LoadLibraryW(L"7z.dll");
+    return LoadArchiverDll(L"7z.dll");
 #else
-    m = LoadLibraryW(L"7z.dll");
+    HMODULE m = LoadArchiverDll(L"TC7Z.DLL");
+    if (m) return m;
+    return LoadArchiverDll(L"7z.dll");
 #endif
-    return m;
 }
 
 // Resolve the CreateObject export and build an IInArchive for 7z.
@@ -371,11 +407,10 @@ const unsigned int RHDF_DIRECTORY  = 0x20;
 
 HMODULE LoadUnrarDll() {
 #ifdef _WIN64
-    HMODULE m = LoadLibraryW(L"UNRAR64.DLL");
+    return LoadArchiverDll(L"UNRAR64.DLL");
 #else
-    HMODULE m = LoadLibraryW(L"UNRAR.DLL");
+    return LoadArchiverDll(L"UNRAR.DLL");
 #endif
-    return m;
 }
 
 // Map RAR method nibble to a friendly label.

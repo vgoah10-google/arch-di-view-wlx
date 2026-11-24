@@ -68,6 +68,8 @@ private:
     void BuildFlattened(TreeNode* node, int depth,
                         std::vector<bool>& ancestorLast, bool lastChild);
 
+    void ShowAbout(HWND hwnd);   // right-click About box
+
     HWND hwnd_ = nullptr;
     HWND parent_ = nullptr;
     bool dark_ = false;
