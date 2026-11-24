@@ -1,0 +1,5 @@
+[plugininstall]
+description=ArchDiView - archive info: compression ratio, details and contents tree
+type=wlx
+file=ArchDiView.wlx
+defaultdir=ArchDiView
