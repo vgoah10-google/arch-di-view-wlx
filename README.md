@@ -2,7 +2,11 @@
 
 ArchDiView is a pure C++/Win32/GDI Lister (WLX) plugin for Total Commander that
 shows detailed information about an archive and a visual tree of its contents.
-**No WebView2, no external archiver DLLs** — everything is parsed natively.
+**No WebView2** — everything is rendered with native GDI. ZIP/TAR and ~17 other
+formats are parsed natively; **7z and RAR delegate to the archiver's own DLLs**
+(`TC7Z64.DLL`/`TC7Z.DLL` and `UNRAR64.DLL`/`UNRAR.DLL`, both shipped with Total
+Commander) for full fidelity, falling back to built-in native parsers when those
+DLLs are unavailable.
 
 ![screenshot](https://img.shields.io/badge/formats-ZIP%20%7C%20TAR%20%7C%207Z%20%7C%20RAR%20%7C%20CAB%20%7C%20LHA-blue)
 
@@ -33,8 +37,8 @@ Both the Lister **light and dark** themes are supported.
 | BZip2  | `.bz2`, `.tbz2` | Single-file bzip2 |
 | Z      | `.z` | Unix `compress` (LZW) |
 | PPM    | `.ppm` | PPM (PPMd) single-file |
-| 7z     | `.7z` | Native header parse. **Plain (uncompressed) headers only** — archives with a compressed/encoded header (7-Zip's default `-mhc=on`) report a clear "not supported" message, since decoding them needs a full LZMA decoder. Create with `7z a -mhc=off` for full support. |
-| RAR    | `.rar` | RAR4 + RAR5 header parse (listing only) |
+| 7z     | `.7z` | Parsed via **`TC7Z64.DLL`/`TC7Z.DLL`** (`IInArchive` COM) — full support including compressed/encoded headers and accurate per-file LZMA method labels. Falls back to a native plain-header parser if the DLL is missing. |
+| RAR    | `.rar` | RAR4 + RAR5 parsed via **`UNRAR64.DLL`/`UNRAR.DLL`** (listing) — full fidelity incl. Unicode names and NTFS timestamps. Falls back to a native RAR4 header parser if the DLL is missing. |
 | CAB    | `.cab` | Microsoft Cabinet |
 | CPIO   | `.cpio` | "new ASCII" (`070701`/`070702`) format |
 | ARJ    | `.arj` | |
@@ -48,9 +52,13 @@ Both the Lister **light and dark** themes are supported.
 | ACE    | `.ace` | Header parse (listing only) |
 
 All parsing is done in-process by ArchDiView's own code (including a built-in
-RFC 1951 DEFLATE decompressor for gzip). No `7z.dll`, `unrar.dll`, or other
-external dependencies are required. Formats marked "listing only" (RAR, ACE)
-parse the directory headers to show names, sizes and counts but do not
+RFC 1951 DEFLATE decompressor for gzip) — except **7z and RAR**, which delegate
+to Total Commander's own `TC7Z64.DLL`/`TC7Z.DLL` and `UNRAR64.DLL`/`UNRAR.DLL`
+for full fidelity (compressed 7z headers, RAR5, Unicode names, NTFS times). No
+extra downloads are needed: those DLLs ship with Total Commander. When they are
+unavailable the plugin transparently falls back to its built-in native header
+parsers (plain-header 7z, RAR4 listing). Formats marked "listing only" (RAR,
+ACE) parse the directory headers to show names, sizes and counts but do not
 extract. Detection is primarily by magic bytes, so mis-named files still open.
 
 ## Building
@@ -88,6 +96,9 @@ src/
   archive_zip.cpp  Native ZIP central-directory parser (ZIP64 aware)
   archive_tar.cpp  Native TAR parser (file-backed + memory-backed)
   archive_gz.cpp   Native GZip / TarGz parser
+  archive_modern.cpp Native RAR/7z/ACE header parsers (fallback path)
+  archive_dll.cpp   DLL-backed 7z (IInArchive COM) + RAR (unrar.dll) parsers
+  sevenzip_com.h    Minimal self-contained 7z IInArchive COM declarations
   inflate.cpp      Minimal RFC 1951 DEFLATE decompressor (for gzip)
   wlxplugin.h      WLX SDK interface definitions
 ```

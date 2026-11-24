@@ -87,6 +87,12 @@ bool TryParseRar(const std::wstring& path, ArchiveInfo& info);
 bool TryParseSevenZip(const std::wstring& path, ArchiveInfo& info);
 bool TryParseAce(const std::wstring& path, ArchiveInfo& info);
 
+// DLL-backed parsers (delegate to the archiver's own DLL for full fidelity).
+// These return false with info.error set when the DLL is unavailable, so the
+// dispatcher can fall back to the native header parsers above.
+bool TryParseSevenZipDll(const std::wstring& path, ArchiveInfo& info);
+bool TryParseRarDll(const std::wstring& path, ArchiveInfo& info);
+
 // Minimal raw-DEFLATE (RFC 1951) decompressor used to read .tgz / .gz.
 // Returns false on malformed input. `out` is resized to the inflated size.
 bool Inflate(const uint8_t* src, size_t srcLen, std::vector<uint8_t>& out);

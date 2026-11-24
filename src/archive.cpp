@@ -63,12 +63,18 @@ bool ParseArchive(const std::wstring& path, ArchiveInfo& info) {
     }
     if (got >= 6 && head[0] == 0x37 && head[1] == 0x7A && head[2] == 0xBC &&
         head[3] == 0xAF && head[4] == 0x27 && head[5] == 0x1C) {
-        // 7-Zip: "7z\xBC\xAF'\x1C".
+        // 7-Zip: "7z\xBC\xAF'\x1C". Prefer the 7z DLL (handles compressed
+        // headers); fall back to the native plain-header parser.
+        if (TryParseSevenZipDll(path, info)) return true;
+        if (info.error != L"7-Zip DLL not available") return false; // DLL present but failed
         return TryParseSevenZip(path, info);
     }
     if (got >= 7 && head[0] == 'R' && head[1] == 'a' && head[2] == 'r' &&
         head[3] == '!' && head[4] == 0x1A && head[5] == 0x07) {
         // RAR4 (\x00) and RAR5 (\x01\x00) share the "Rar!\x1A\x07" prefix.
+        // Prefer the unrar DLL (full RAR5 support); fall back to native RAR4.
+        if (TryParseRarDll(path, info)) return true;
+        if (info.error != L"unrar DLL not available") return false; // DLL present but failed
         return TryParseRar(path, info);
     }
     if (got >= 4 && head[0] == 'M' && head[1] == 'S' && head[2] == 'C' &&

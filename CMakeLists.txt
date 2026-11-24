@@ -24,6 +24,7 @@ add_library(arch-diview SHARED
     src/archive_containers.cpp
     src/archive_old.cpp
     src/archive_modern.cpp
+    src/archive_dll.cpp
     src/inflate.cpp
 )
 
@@ -74,6 +75,7 @@ if(ARCHDIVIEW_BUILD_TESTS)
         src/archive.cpp src/archive_zip.cpp src/archive_tar.cpp
         src/archive_gz.cpp src/archive_simple.cpp src/archive_classic.cpp
         src/archive_containers.cpp src/archive_old.cpp src/archive_modern.cpp
+        src/archive_dll.cpp
         src/inflate.cpp src/tree.cpp)
     target_include_directories(test_parse PRIVATE src)
     target_compile_definitions(test_parse PRIVATE
