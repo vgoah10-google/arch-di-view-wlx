@@ -4,7 +4,7 @@ ArchDiView is a pure C++/Win32/GDI Lister (WLX) plugin for Total Commander that
 shows detailed information about an archive and a visual tree of its contents.
 **No WebView2, no external archiver DLLs** — everything is parsed natively.
 
-![screenshot](https://img.shields.io/badge/formats-ZIP%20%7C%20TAR%20%7C%20GZ%2FTGZ-blue)
+![screenshot](https://img.shields.io/badge/formats-ZIP%20%7C%20TAR%20%7C%207Z%20%7C%20RAR%20%7C%20CAB%20%7C%20LHA-blue)
 
 ## What it shows
 
@@ -30,10 +30,28 @@ Both the Lister **light and dark** themes are supported.
 | TAR    | `.tar` | GNU/POSIX long-name support |
 | GZip   | `.gz` | Single-file gzip |
 | TarGz  | `.tgz`, `.tar.gz` | Inflates the gzip payload and lists the inner TAR |
+| BZip2  | `.bz2`, `.tbz2` | Single-file bzip2 |
+| Z      | `.z` | Unix `compress` (LZW) |
+| PPM    | `.ppm` | PPM (PPMd) single-file |
+| 7z     | `.7z` | Native header parse. **Plain (uncompressed) headers only** — archives with a compressed/encoded header (7-Zip's default `-mhc=on`) report a clear "not supported" message, since decoding them needs a full LZMA decoder. Create with `7z a -mhc=off` for full support. |
+| RAR    | `.rar` | RAR4 + RAR5 header parse (listing only) |
+| CAB    | `.cab` | Microsoft Cabinet |
+| CPIO   | `.cpio` | "new ASCII" (`070701`/`070702`) format |
+| ARJ    | `.arj` | |
+| LHA/LZH| `.lzh`, `.lha` | Levels 0/1/2 headers |
+| ARC/PAK| `.arc`, `.pak` | |
+| SQZ    | `.sqz` | |
+| ZOO    | `.zoo` | |
+| HA     | `.ha` | |
+| BH     | `.bh` | Black Hole |
+| DWC    | `.dwc` | Directory-at-end layout |
+| ACE    | `.ace` | Header parse (listing only) |
 
 All parsing is done in-process by ArchDiView's own code (including a built-in
 RFC 1951 DEFLATE decompressor for gzip). No `7z.dll`, `unrar.dll`, or other
-external dependencies are required.
+external dependencies are required. Formats marked "listing only" (RAR, ACE)
+parse the directory headers to show names, sizes and counts but do not
+extract. Detection is primarily by magic bytes, so mis-named files still open.
 
 ## Building
 

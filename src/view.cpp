@@ -304,10 +304,16 @@ void View::DrawRatioBar(HDC hdc, int x, int y, int w, const Layout& L) {
     std::wstring title = L"Compression ratio";
     TextOutW(hdc, x, y, title.c_str(), (int)title.size());
 
-    // Ratio value, right-aligned.
+    // Ratio value, right-aligned. When the unpacked size is unknown (0), the
+    // ratio is meaningless — show a clear "size unknown" label instead of a
+    // misleading "saved 100%".
     double ratio = info_.ratio();
     wchar_t pct[64];
-    swprintf(pct, 64, L"%.1f%%  (saved %.1f%%)", ratio * 100.0, info_.saved() * 100.0);
+    if (info_.totalUnpacked == 0) {
+        wcscpy_s(pct, L"size unknown");
+    } else {
+        swprintf(pct, 64, L"%.1f%%  (saved %.1f%%)", ratio * 100.0, info_.saved() * 100.0);
+    }
     SIZE sz; GetTextExtentPoint32W(hdc, pct, (int)wcslen(pct), &sz);
     TextOutW(hdc, x + w - sz.cx, y, pct, (int)wcslen(pct));
     SelectObject(hdc, of);
@@ -518,10 +524,10 @@ void View::DrawTree(HDC hdc, int x, int y, int w, int h, const Layout& L) {
         TextOutW(hdc, unpX + sizeColW - us.cx - Scale(6, dpi_), rowY + 1,
                  unpS.c_str(), (int)unpS.size());
         // Method (files only, and only when compression is per-entry, e.g. ZIP).
-        if (!n->isDir && info_.perEntryCompression) {
-            const wchar_t* mn = ZipMethodName(n->method);
+        if (!n->isDir && info_.perEntryCompression && !n->methodName.empty()) {
             SetTextColor(hdc, colMuted_);
-            TextOutW(hdc, methX, rowY + 1, mn, (int)wcslen(mn));
+            TextOutW(hdc, methX, rowY + 1, n->methodName.c_str(),
+                     (int)n->methodName.size());
         }
     }
 

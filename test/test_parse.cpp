@@ -14,12 +14,16 @@
 using namespace archdiview;
 
 static void PrintBar(const ArchiveInfo& info) {
-    double ratio = info.ratio();
     const int width = 40;
-    int fill = (int)(width * std::max(0.0, std::min(1.0, ratio)));
-    wprintf(L"  [");
-    for (int i = 0; i < width; ++i) wprintf(L"%c", i < fill ? L'\x2588' : L' ');
-    wprintf(L"] %.1f%%  (saved %.1f%%)\n", ratio * 100.0, info.saved() * 100.0);
+    if (info.totalUnpacked == 0) {
+        wprintf(L"  [%*s] size unknown\n", width, L"");
+    } else {
+        double ratio = info.ratio();
+        int fill = (int)(width * std::max(0.0, std::min(1.0, ratio)));
+        wprintf(L"  [");
+        for (int i = 0; i < width; ++i) wprintf(L"%c", i < fill ? L'\x2588' : L' ');
+        wprintf(L"] %.1f%%  (saved %.1f%%)\n", ratio * 100.0, info.saved() * 100.0);
+    }
     wprintf(L"  Packed: %s   Unpacked: %s\n",
             FormatBytes(info.totalPacked).c_str(),
             FormatBytes(info.totalUnpacked).c_str());
@@ -55,8 +59,8 @@ static void PrintTree(const TreeNode* node, int depth,
                 label.c_str(),
                 FormatBytes(node->packedSize).c_str(),
                 FormatBytes(node->unpackedSize).c_str());
-        if (!node->isDir)
-            wprintf(L"  %s", ZipMethodName(node->method));
+        if (!node->isDir && !node->methodName.empty())
+            wprintf(L"  %s", node->methodName.c_str());
         wprintf(L"\n");
     }
     if (node->isDir) {

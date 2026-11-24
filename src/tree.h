@@ -17,7 +17,8 @@ struct TreeNode {
     bool isDir = false;
     uint64_t packedSize = 0;      // self (files) or aggregated (folders)
     uint64_t unpackedSize = 0;    // self (files) or aggregated (folders)
-    uint32_t method = 0;          // valid for files
+    uint32_t method = 0;          // raw method id (files)
+    std::wstring methodName;      // resolved method label (files)
     FILETIME mtime = {};
     std::vector<std::unique_ptr<TreeNode>> children;
 

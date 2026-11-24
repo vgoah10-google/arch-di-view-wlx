@@ -86,6 +86,7 @@ std::unique_ptr<TreeNode> BuildTree(const ArchiveInfo& info) {
             node->packedSize = ent.packedSize;
             node->unpackedSize = ent.unpackedSize;
             node->method = ent.method;
+            node->methodName = ent.methodName;
             node->mtime = ent.mtime;
             cur->children.push_back(std::move(node));
         }

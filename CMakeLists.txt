@@ -19,6 +19,11 @@ add_library(arch-diview SHARED
     src/archive_zip.cpp
     src/archive_tar.cpp
     src/archive_gz.cpp
+    src/archive_simple.cpp
+    src/archive_classic.cpp
+    src/archive_containers.cpp
+    src/archive_old.cpp
+    src/archive_modern.cpp
     src/inflate.cpp
 )
 
@@ -67,7 +72,9 @@ option(ARCHDIVIEW_BUILD_TESTS "Build the parser test harness" ON)
 if(ARCHDIVIEW_BUILD_TESTS)
     add_executable(test_parse test/test_parse.cpp
         src/archive.cpp src/archive_zip.cpp src/archive_tar.cpp
-        src/archive_gz.cpp src/inflate.cpp src/tree.cpp)
+        src/archive_gz.cpp src/archive_simple.cpp src/archive_classic.cpp
+        src/archive_containers.cpp src/archive_old.cpp src/archive_modern.cpp
+        src/inflate.cpp src/tree.cpp)
     target_include_directories(test_parse PRIVATE src)
     target_compile_definitions(test_parse PRIVATE
         UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)

@@ -105,9 +105,15 @@ DCPCALL void ListCloseWindow(HWND listWin) {
 
 DCPCALL void ListGetDetectString(char* detectString, int maxlen) {
     // Formats ArchDiView parses natively (no external DLLs).
+    // Magic-based detection in ParseArchive is primary; these extensions let TC
+    // route the file to the plugin in the first place.
     lstrcpynA(detectString,
               "EXT=\"ZIP\"|EXT=\"JAR\"|EXT=\"TAR\"|EXT=\"GZ\"|EXT=\"TGZ\"|"
-              "EXT=\"TBZ2\"|EXT=\"TAR.GZ\"",
+              "EXT=\"TBZ2\"|EXT=\"TAR.GZ\"|EXT=\"TAR.BZ2\"|EXT=\"BZ2\"|"
+              "EXT=\"7Z\"|EXT=\"RAR\"|EXT=\"CAB\"|EXT=\"CPIO\"|EXT=\"ARJ\"|"
+              "EXT=\"LZH\"|EXT=\"LHA\"|EXT=\"ARC\"|EXT=\"PAK\"|EXT=\"SQZ\"|"
+              "EXT=\"ZOO\"|EXT=\"HA\"|EXT=\"BH\"|EXT=\"DWC\"|EXT=\"ACE\"|"
+              "EXT=\"PPM\"|EXT=\"Z\"",
               maxlen);
 }
 

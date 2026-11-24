@@ -19,7 +19,8 @@ struct ArchiveEntry {
     bool isDir = false;
     uint64_t packedSize = 0;      // compressed size on disk
     uint64_t unpackedSize = 0;    // original size
-    uint32_t method = 0;          // format-specific compression method id
+    uint32_t method = 0;          // format-specific raw method id (optional)
+    std::wstring methodName;      // resolved method label, e.g. "Deflate"
     FILETIME mtime = {};
 };
 
@@ -61,6 +62,30 @@ bool TryParseTar(HANDLE h, uint64_t size, uint64_t baseOffset, ArchiveInfo& info
 bool TryParseGz(const std::wstring& path, ArchiveInfo& info);
 // Parse a TAR stream already inflated into memory (used for the .tgz payload).
 bool TryParseTarMemory(const std::vector<uint8_t>& data, ArchiveInfo& info);
+
+// Single-file/stream compression formats (one logical member, not a directory).
+bool TryParseBZip2(const std::wstring& path, ArchiveInfo& info);
+bool TryParseZ(const std::wstring& path, ArchiveInfo& info);
+bool TryParsePPM(const std::wstring& path, ArchiveInfo& info);
+
+// Classic per-file-header archives.
+bool TryParseLha(const std::wstring& path, ArchiveInfo& info);
+bool TryParseArcPak(const std::wstring& path, ArchiveInfo& info);
+bool TryParseArj(const std::wstring& path, ArchiveInfo& info);
+bool TryParseSqz(const std::wstring& path, ArchiveInfo& info);
+bool TryParseZoo(const std::wstring& path, ArchiveInfo& info);
+bool TryParseHa(const std::wstring& path, ArchiveInfo& info);
+bool TryParseBh(const std::wstring& path, ArchiveInfo& info);
+bool TryParseDwc(const std::wstring& path, ArchiveInfo& info);
+
+// Container formats.
+bool TryParseCab(const std::wstring& path, ArchiveInfo& info);
+bool TryParseCpio(const std::wstring& path, ArchiveInfo& info);
+
+// Modern formats (header/listing parsers, no external DLL needed).
+bool TryParseRar(const std::wstring& path, ArchiveInfo& info);
+bool TryParseSevenZip(const std::wstring& path, ArchiveInfo& info);
+bool TryParseAce(const std::wstring& path, ArchiveInfo& info);
 
 // Minimal raw-DEFLATE (RFC 1951) decompressor used to read .tgz / .gz.
 // Returns false on malformed input. `out` is resized to the inflated size.
