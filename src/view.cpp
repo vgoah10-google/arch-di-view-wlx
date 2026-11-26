@@ -225,18 +225,13 @@ LRESULT View::HandleMessage(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             AppendMenuW(menu, MF_STRING, kMenuAbout, L"About ArchDiView...");
             POINT pt;
             GetCursorPos(&pt);
-            // TrackPopupMenu sends WM_COMMAND to hwnd when an item is chosen.
+            // TPM_RETURNCMD: TrackPopupMenu returns the chosen command id
+            // directly instead of posting WM_COMMAND, so capture the result.
             SetForegroundWindow(hwnd);
-            TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_RETURNCMD,
-                           pt.x, pt.y, 0, hwnd, nullptr);
+            int cmd = (int)TrackPopupMenu(menu, TPM_RIGHTBUTTON | TPM_RETURNCMD,
+                                          pt.x, pt.y, 0, hwnd, nullptr);
             DestroyMenu(menu);
-            return 0;
-        }
-        case WM_COMMAND: {
-            int id = (int)LOWORD(wp);
-            if (id == kMenuAbout) {
-                ShowAbout(hwnd);
-            }
+            if (cmd == kMenuAbout) ShowAbout(hwnd);
             return 0;
         }
     }
